@@ -31,9 +31,13 @@
 
 	 <script type = "text/javascript">
 	var map = new BMap.Map("allmap");
+	var top_left_control = new BMap.ScaleControl({anchor: BMAP_ANCHOR_TOP_LEFT});// 左上角，添加比例尺
+    var top_left_navigation = new BMap.NavigationControl();//左上添加平移控件  
 	var point = new BMap.Point(116.473008, 39.916605);
 	map.centerAndZoom(point, 10);
 	map.enableScrollWheelZoom(true);
+	map.addControl(top_left_navigation);
+    map.addControl(top_left_control);
 	map.setMapStyle({
 		styleJson : style
 	});
