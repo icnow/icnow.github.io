@@ -1,0 +1,242 @@
+﻿ <!DOCTYPE html>
+ <html>
+ <head>
+ <meta http-equiv="Content-Type" content = "text/html; charset=UTF-8"/>
+	 <meta name = "viewport" content = "initial-scale=1.0, user-scalable=no"/>
+	 <title>景点推荐</title>
+	 <style type = "text/css">
+	body, html {
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	font-family:"微软雅黑";
+}
+ #allmap{
+	width: 100%;
+	height: 100%;
+}
+ </style>
+ <script type = "text/javascript" src = "http://api.map.baidu.com/api?v=2.0&ak=yaDRGoon5YoRzAAwH781yUgn"></script>
+	 <script type = "text/javascript" src = "http://api.map.baidu.com/library/CurveLine/1.5/src/CurveLine.min.js"> </script>
+	 <script type = "text/javascript" src = "./mapstyle.js"> </script>
+	 <script type = "text/javascript" src = "./placePoint.js"></script>
+	 <script type = "text/javascript" src = "./placeline.js"> </script>
+	  <script type = "text/javascript" src = "./pathObeject.js"> </script>
+	   <script type = "text/javascript" src = "./pointslatlng.js"> </script>
+	 </head>
+	 <body>
+
+	 <div id ="allmap"></div>
+	 </body>
+
+	 <script type = "text/javascript">
+	var map = new BMap.Map("allmap");
+	var point = new BMap.Point(116.473008, 39.916605);
+	map.centerAndZoom(point, 10);
+	map.enableScrollWheelZoom(true);
+	map.setMapStyle({
+		styleJson : style
+	});
+	var pathoverlays = [];
+	var pointcolor = "";
+	var moveoverlabels = "";
+	for (var i = 0; i < points.length; i++) {
+		if (points[i].lng < 115.4237 || points[i].lng > 117.507 || 39.4395 > points[i].lat || points[i].lat > 41.0607)
+			continue;
+		if (points[i].type == "nonlocal")
+			pointcolor = "#F19272";
+		else {
+			pointcolor = "#019199"
+		}
+		var vectorMarker = new BMap.Marker(new BMap.Point(points[i].lng, points[i].lat), {
+
+				// 指定Marker的icon属性为Symbol
+				icon : new BMap.Symbol(BMap_Symbol_SHAPE_CIRCLE, {
+					scale : points[i].pr * 800 > 5 ? points[i].pr * 800 : 5, //图标缩放大小
+					strokeWeight : 0.1,
+					strokeColor : "#6191B9",
+					fillColor : pointcolor, //填充颜色
+					fillOpacity : 1 //填充透明度
+				})
+			});
+
+		map.addOverlay(vectorMarker);
+		addmouseoverHandler(points[i].name, vectorMarker)
+		addClickHandler(points[i].name, vectorMarker)
+		if (points[i].pr < 0.01)
+			continue;
+		var opts = {
+			position : new BMap.Point(points[i].lng, points[i].lat), // 指定文本标注所在的地理位置
+			offset : new BMap.Size(-15, -10) //设置文本偏移量
+		}
+		var label = new BMap.Label(points[i].name, opts); // 创建文本标注对象
+		label.setStyle({
+			color : "white",
+			fontSize : "10px",
+			border : "none",
+			background : "none",
+			height : "20px",
+			lineHeight : "20px",
+			fontFamily : "微软雅黑"
+		});
+		map.addOverlay(label);
+
+	}
+	function test() {
+		for (var i = 0; i < linepoints.length; i++) {
+			var p1 = linepoints[i].startPoint;
+			var p2 = linepoints[i].endPoint;
+			p1.lng = Number(p1.lng);
+			p2.lng = Number(p2.lng);
+			p2.lat = Number(p2.lat);
+			p1.lat = Number(p1.lat);
+			if (!p1.lng || !p1.lat || !p2.lat || !p2.lng)
+				continue;
+			if (p1.lng < 115.4237 || p1.lng > 117.507 || 39.4395 > p1.lat || p1.lat > 41.0607 || p2.lng < 115.4237 || p2.lng > 117.507 || 39.4395 > p2.lat || p2.lat > 41.0607)
+				continue;
+
+			var p1 = new BMap.Point(linepoints[i].startPoint.lng, linepoints[i].startPoint.lat);
+			var p2 = new BMap.Point(linepoints[i].endPoint.lng, linepoints[i].endPoint.lat);
+
+			var distance = map.getDistance(p1, p2);
+			//console.log(distance)
+			//if (distance> 1200000) {
+			//var points = [p1, p2];
+			//var curve = new BMapLib.CurveLine(points, {
+			//strokeColor : "blue",
+			//strokeWeight : 1,
+			//strokeOpacity : 0.5
+			//}); //创建弧线对象
+			//	map.addOverlay(curve); //添加到地图中
+
+			//}
+			if (linepoints[i].weight > 50) {
+				weight = linepoints[i].weight;
+				var color = ""
+
+					if (weight > 1500)
+						color = "#CE2930";
+					else if (weight > 1000)
+						color = "#DD585B";
+					else if (weight > 500)
+						color = "#E99B99";
+					else if (weight > 250)
+						color = "#1DA891";
+					else if (weight > 100)
+						color = "#81C5CE";
+					else
+						color = "#87D1F6";
+					//alert(color);
+					var polyline = new BMap.Polyline([p1, p2], {
+						strokeColor : color,
+						strokeWeight : weight / 200,
+						strokeOpacity : 1
+					}); //创建折线
+
+				addClickHandler(linepoints[i].startPoint.name, polyline)
+				map.addOverlay(polyline); //增加折线
+				//
+			}
+
+		}
+	}
+	function addClickHandler(content, polyline) {
+      
+		polyline.addEventListener("click", function (e) {
+			//openInfo(content, e)
+			 addlabel(e.target, content);
+			showpath(content);
+		});
+	}
+	function addmouseoverHandler(name, maker) {
+		// map.removeOverlay(moveoverlabels)
+
+		maker.addEventListener("mouseover", function (e) {
+			
+			var p = e.target;
+			addlabel(p, name);
+			
+		});
+	}
+	function openInfo(content, e) {
+		var p = e.target;
+		var point = new BMap.Point(p.getPosition().lng, p.getPosition().lat);
+		var infoWindow = new BMap.InfoWindow(content, opts); // 创建信息窗口对象
+		map.openInfoWindow(infoWindow, point); //开启信息窗口
+	}
+	var opts = {
+		width : 250, // 信息窗口宽度
+		height : 80, // 信息窗口高度
+		//title : "信息窗口", // 信息窗口标题
+		enableMessage : true //设置允许信息窗发送短息
+	};
+	function addlabel(p, name) {
+		map.removeOverlay(moveoverlabels);
+		
+		var opts = {
+			position : p.getPosition(), // 指定文本标注所在的地理位置
+			offset : new BMap.Size(-15, -10) //设置文本偏移量
+		}
+		moveoverlabels = new BMap.Label(name, opts); // 创建文本标注对象
+		moveoverlabels.setStyle({
+			color : "white",
+			fontSize : "10px",
+			border : "none",
+			background : "none",
+			height : "20px",
+			lineHeight : "20px",
+			fontFamily : "微软雅黑"
+		});
+		map.addOverlay(moveoverlabels);
+	}
+	function getBoundary() {
+		var bdary = new BMap.Boundary();
+		bdary.get("北京", function (rs) { //获取行政区域
+			//map.clearOverlays();        //清除地图覆盖物
+			var count = rs.boundaries.length; //行政区域的点有多少个
+			for (var i = 0; i < count; i++) {
+				var ply = new BMap.Polygon(rs.boundaries[i], {
+						strokeWeight : 1,
+						fillOpacity : 0.1
+					}); //建立多边形覆盖物
+				map.addOverlay(ply); //添加覆盖物
+				//map.setViewport(ply.getPath()); //调整视野
+			}
+		});
+	}
+	function showpath(name) {
+		clearAll();
+		var paths = pathObeject[name];
+		if (!paths)
+			return;
+		// var colors=["#D76064","#F09276","#FDE6C4","#9FC57C","#46BBB3"];
+		var colors = ["#FF1100", "#FE5400", "#FF7A01", "#FFBC03", "#46BBB3"];
+		for (var i = 0; i < 3; i++) {
+			if (!pointslatlng[paths[i][0]] || !pointslatlng[paths[i][1] || !pointslatlng[paths[i][2]]] || pointslatlng[paths[i][0]].lat > 75 || pointslatlng[paths[i][1]].lat > 75 || pointslatlng[paths[i][2]].lat > 75)
+				return;
+			var p1 = new BMap.Point(pointslatlng[paths[i][0]].lng, pointslatlng[paths[i][0]].lat);
+			var p2 = new BMap.Point(pointslatlng[paths[i][1]].lng, pointslatlng[paths[i][1]].lat);
+			var p3 = new BMap.Point(pointslatlng[paths[i][2]].lng, pointslatlng[paths[i][2]].lat);
+			var polyline = new BMap.Polyline([p1, p2, p3], {
+					strokeColor : colors[i],
+					strokeWeight : (5 - i) * 1,
+					strokeOpacity : 0.8
+				}); //创建折线
+
+			pathoverlays.push(polyline);
+			map.addOverlay(polyline); //增加折线
+		}
+	}
+	function clearAll() {
+		for (var i = 0; i < pathoverlays.length; i++) {
+			map.removeOverlay(pathoverlays[i]);
+		}
+		pathoverlays.length = 0
+	}
+
+	setTimeout(function () {
+		getBoundary();
+	}, 2000);
+ </script>
+
+</html>
